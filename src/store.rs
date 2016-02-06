@@ -2,10 +2,14 @@ use std::path::Path;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
+use std::io::BufWriter;
 use filetime::FileTime;
 use filetime;
 
+use std::io;
+use std::io::Result;
 use std::io::Read;
+use std::io::Write;
 
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
@@ -13,12 +17,16 @@ use crypto::sha2::Sha256;
 pub fn store_file(store_path: &Path, source_file: &Path) -> String {
 	let tmp_path = store_path.join("tmp");
 
-	fs::copy(&source_file, &tmp_path);
+	let mut file_reader = BufReader::new(File::open(&source_file).unwrap());
+	let mut file_writer = BufWriter::new(File::create(&tmp_path).unwrap());
 
-	let hash = hash(&source_file);
+	let mut hash_file_write = HashWriter::new(file_writer);
+
+	io::copy(&mut file_reader, &mut hash_file_write);
+
+	let hash = hash_file_write.get_hash();
 
 	let final_path = store_path.join(&hash);
-
 	fs::rename(&tmp_path, &final_path);
 
 	hash
@@ -38,25 +46,27 @@ pub fn extract_file(store_path: &Path, hash: &String, data_path: &Path, filename
 	filetime::set_file_times(&file_in_wd, seconds_since_1970, seconds_since_1970);
 }
 
-fn hash(file: &Path) -> String {
-	let f = File::open(&file).unwrap();
-	let mut reader = BufReader::new(f);
-	let mut buffer = [0; 512];
+struct HashWriter<W: Write> {
+	hasher: Sha256,
+	writer: W
+}
 
-	let mut hasher = Sha256::new();
+impl <W: Write> HashWriter<W>  {
+	fn new(inner: W) -> HashWriter<W> {
+		HashWriter {hasher: Sha256::new(), writer: inner}
+	}
+	fn get_hash(&mut self) -> String {
+		self.hasher.result_str()
+	}
+}
 
-	loop {
-		let bytes_read = reader.read(&mut buffer).unwrap();
-		if bytes_read == 512 {
-			hasher.input(&buffer);
-		} else {
-			let v : Vec<u8> = buffer.iter().cloned().collect();
-			let (x, _) = v.split_at(bytes_read);
-			hasher.input(x);
-		}
-		if bytes_read == 0 { break; }
+impl <W: Write> Write for HashWriter<W>  {
+	fn write(&mut self, buf: &[u8]) -> Result<usize> {
+		self.hasher.input(&buf);
+		self.writer.write(buf)
 	}
 
-	let hex = hasher.result_str();
-	hex
+	fn flush(&mut self) -> Result<()> {
+		self.writer.flush()
+	}
 }
