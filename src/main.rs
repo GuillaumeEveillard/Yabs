@@ -110,7 +110,6 @@ fn commit() {
 	}	
 	let updated_metadata = updated_metadata;
 
-//	println!("Updated metadata {:?}", &updated_metadata);
 
 	let mut mt_hierarchy = mt_hierarchy;
 	mt_hierarchy.update(updated_metadata);
@@ -123,7 +122,6 @@ fn files_to_commit(wd_hierarchy: HashMap<String, model::MetaData>, mt_hierarchy:
 
 	for (filename, metadata) in wd_hierarchy.iter() {
 		let actual_metadata = mt_hierarchy.get_latest_meta_data(&filename);
-	//	println!("actual metadata {:?}", actual_metadata);
 
 		match actual_metadata {
 			Some(x) => {
@@ -181,10 +179,10 @@ mod model {
 				None => None
 			}
 		}
-		pub fn update(&mut self, newMetadata: HashMap<String, MetaData>) {
+		pub fn update(&mut self, new_metadata_map: HashMap<String, MetaData>) {
 			self.nb_revision = self.nb_revision + 1;
 
-			for (filename, metadata) in newMetadata {
+			for (filename, metadata) in new_metadata_map {
 				
 				let new_metadata = self.new_metadata(&filename);
 
@@ -201,7 +199,7 @@ mod model {
 			let actual_metadata = self.files.get(filename);
 
 			match actual_metadata {
-				Some(x) => false,
+				Some(_) => false,
 				None => true
 			}
 		}
@@ -225,8 +223,8 @@ mod model {
 		}
 		pub fn has_metadata_with_timestamp(&self, timestamp: u64) -> bool {
 			let mut it = self.metadata.iter();
-			match (it.find(|&m| m.get_timestamp() == timestamp)) {
-				Some(x) => true,
+			match it.find(|&m| m.get_timestamp() == timestamp) {
+				Some(_) => true,
 				None => false
 			}
 		}

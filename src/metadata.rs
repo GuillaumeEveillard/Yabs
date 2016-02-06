@@ -6,7 +6,6 @@ use std::io::prelude::*;
 use rustc_serialize::json;
 
 use model::Hierarchy;
-use model::MetaDataSet;
 
 pub fn create_emty_metadata_file<P: AsRef<Path>>(path: P) {
 	println!("Creating empty metadata file in {}", path.as_ref().to_str().unwrap());  
@@ -34,8 +33,8 @@ pub fn read_metadata_file<P: AsRef<Path>>(path: P) -> Hierarchy {
 }
 
 pub fn write_metadata_file<P: AsRef<Path>>(path: P, hierarchy: Hierarchy) {
-	let jsonHierarchy = json::encode(&hierarchy).unwrap();
-    let u8_vec = jsonHierarchy.into_bytes();
+	let json_hierarchy = json::encode(&hierarchy).unwrap();
+    let u8_vec = json_hierarchy.into_bytes();
 	let u8_slice = &u8_vec[..];
 
 	let mut file = File::create(&path).unwrap();

@@ -1,4 +1,3 @@
-use std::path;
 use std::path::Path;
 use std::fs;
 use std::fs::File;
@@ -40,25 +39,24 @@ pub fn extract_file(store_path: &Path, hash: &String, data_path: &Path, filename
 }
 
 fn hash(file: &Path) -> String {
-	let mut f = File::open(&file).unwrap();
+	let f = File::open(&file).unwrap();
 	let mut reader = BufReader::new(f);
 	let mut buffer = [0; 512];
 
 	let mut hasher = Sha256::new();
 
 	loop {
-		let bytesRead = reader.read(&mut buffer).unwrap();
-		if bytesRead == 512 {
+		let bytes_read = reader.read(&mut buffer).unwrap();
+		if bytes_read == 512 {
 			hasher.input(&buffer);
 		} else {
 			let v : Vec<u8> = buffer.iter().cloned().collect();
-			let (x, y) = v.split_at(bytesRead);
+			let (x, _) = v.split_at(bytes_read);
 			hasher.input(x);
 		}
-		if bytesRead == 0 { break; }
+		if bytes_read == 0 { break; }
 	}
 
 	let hex = hasher.result_str();
-//	println!("Hash: {:?}", hex);
 	hex
 }
