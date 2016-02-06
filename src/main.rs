@@ -22,6 +22,7 @@ fn dispatch_option(option: &str) {
 	match option {
 		"new" => new_repo(),
 		"update" => update(),
+		"update-remote" => update_remote(),
 		"commit" => commit(),
 		_ => println!("Unknown option {}", option)
 	}
@@ -48,6 +49,28 @@ fn update() {
 
 	for (filename, metadata) in file_top_update.iter() {
 		store::extract_file(store_path, &metadata.get_hash(), data_path, filename, metadata.get_timestamp());
+	}
+}
+
+fn update_remote() {
+	let data_path = Path::new("data");
+	let json_path = Path::new("metadata.json");
+	let json_remote_path = Path::new("metadata-remote.json");
+	let store_path = Path::new("store");
+
+	let wd_hierarchy : HashMap<String, model::MetaData> = workingdirectory::read_working_directory(data_path);
+	println!("{} files in the working directory", wd_hierarchy.len());
+
+	let mt_hierarchy = metadata::read_metadata_file(json_path);
+	println!("{} files in the metadata", mt_hierarchy.get_number_of_files());
+
+	let mt_remote_hierarchy = metadata::read_metadata_file(json_remote_path);
+	println!("{} files in the remote metadata", mt_remote_hierarchy.get_number_of_files());
+
+	let file_top_update = files_to_update_remote(wd_hierarchy, &mt_hierarchy, &mt_remote_hierarchy);
+	match file_top_update {
+		Some(_) => println!("OK to update"),
+		None => println!("IMPOSSIBLE to update")
 	}
 
 }
@@ -84,6 +107,50 @@ fn files_to_update(wd_hierarchy: HashMap<String, model::MetaData>, mt_hierarchy:
 	}
 
 	file_to_update	
+}
+
+fn files_to_update_remote(wd_hierarchy: HashMap<String, model::MetaData>, mt_local_hierarchy: &model::Hierarchy, mt_remote_hierarchy: &model::Hierarchy) -> Option<HashMap<String, model::MetaData>>  {
+	let mut file_to_update : HashMap<String, model::MetaData> = HashMap::new();
+
+	for (filename, metadataset) in mt_remote_hierarchy.get_files().iter() {
+		let wd_metadata = wd_hierarchy.get(filename);
+
+		match wd_metadata {
+			Some(x) => {
+				let wd_timestamp = x.get_timestamp();
+				let last_md_timestamp = metadataset.get_last().unwrap().get_timestamp();
+
+				if wd_timestamp == last_md_timestamp {
+					println!("- No need to update because timestamps are equal {}", filename);
+				} else if metadataset.has_metadata_with_timestamp(wd_timestamp) {
+					println!("- Existing file to update {}", filename);
+					file_to_update.insert(filename.clone(), metadataset.get_last().unwrap().clone());
+				} else { //timestamp unknown
+					
+					match mt_local_hierarchy.get_latest_meta_data(&filename) {
+						Some(m) => {
+							if m.get_timestamp() == last_md_timestamp {
+								println!("- No need to update because working directory file is a correct new version {}", filename);
+							} else {
+								println!("- CONFLICT ! The remove and the working directory file have changed {}", filename);
+								return Option::None;
+							}
+						}
+						None => {
+							println!("- CONFLICT ! New file in the working directory but a remote version exists {}", filename);
+							return Option::None;
+						}
+					};
+				}
+			    ()},
+			None => {
+				println!("- New file to update {}", filename);
+			    file_to_update.insert(filename.clone(), metadataset.get_last().unwrap().clone());
+			    () }
+		}
+	}
+
+	Option::Some(file_to_update)
 }
 
 
