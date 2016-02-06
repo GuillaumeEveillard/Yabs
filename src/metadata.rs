@@ -1,10 +1,8 @@
 
-use std::collections::HashMap;
 use std::path::Path;
 use std::fs::File;
 use std::io::prelude::*;
 
-use filetime::FileTime;
 use rustc_serialize::json;
 
 use model::Hierarchy;
@@ -15,11 +13,7 @@ pub fn create_emty_metadata_file<P: AsRef<Path>>(path: P) {
 
 	let hierarchy = Hierarchy::new_empty();
 
-//	println!("hey : {:?}", hierarchy);
-
 	let json_hierarchy =   json::encode(&hierarchy).unwrap();
-
-//	println!("hey in json: {:?}", json_hierarchy);    
 
 	let mut file = File::create(&path).unwrap();
 
@@ -31,8 +25,6 @@ pub fn create_emty_metadata_file<P: AsRef<Path>>(path: P) {
 }
 
 pub fn read_metadata_file<P: AsRef<Path>>(path: P) -> Hierarchy {
-//	println!("Reading metadata file from {}", path.as_ref().to_str().unwrap());  
- 
 	let mut file = File::open(&path).unwrap();
 	let mut json = String::new();
     file.read_to_string(&mut json);

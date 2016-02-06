@@ -60,13 +60,21 @@ fn files_to_update(wd_hierarchy: HashMap<String, model::MetaData>, mt_hierarchy:
 
 		match wd_metadata {
 			Some(x) => {
-				println!("- Need to do something with {}", filename);
-				//if(x.is_more_recent(&metadata)) {
-				//	println!("- File to update {}", filename);
-				//	files_to_commit.insert(filename.clone(), metadata.clone());	
-				//} else {
-				//	println!("- No need to update {}", filename);
-				//}
+				let wd_timestamp = x.get_timestamp();
+				let last_md_timestamp = metadataset.get_last().unwrap().get_timestamp();
+
+				if wd_timestamp == last_md_timestamp {
+					println!("- No need to update because timestamps are equal {}", filename);
+				} else if metadataset.has_metadata_with_timestamp(wd_timestamp) {
+					println!("- Existing file to update {}", filename);
+					file_to_update.insert(filename.clone(), metadataset.get_last().unwrap().clone());
+				} else { //timestamp unknown
+					if wd_timestamp > last_md_timestamp {
+						println!("- Working directory file is more recent {}", filename);
+					} else {
+						print!(" - No !! Working directory file is older. It makes no sense {}", filename);
+					}
+				}
 			    ()},
 			None => {
 				println!("- New file to update {}", filename);
@@ -119,7 +127,7 @@ fn files_to_commit(wd_hierarchy: HashMap<String, model::MetaData>, mt_hierarchy:
 
 		match actual_metadata {
 			Some(x) => {
-				if(x.is_more_recent(&metadata)) {
+				if x.is_more_recent(&metadata) {
 					println!("- File to update {}", filename);
 					files_to_commit.insert(filename.clone(), metadata.clone());	
 				} else {
@@ -180,7 +188,7 @@ mod model {
 				
 				let new_metadata = self.new_metadata(&filename);
 
-				if(new_metadata) {
+				if new_metadata {
 					self.files.insert(filename, MetaDataSet::new_simple_meta_data_set(metadata));
 				} else {
 					let mut m = self.files.get_mut(&filename).unwrap();
@@ -214,6 +222,13 @@ mod model {
 		}
 		pub fn add_revision(&mut self, m: MetaData) {
 			self.metadata.push(m);
+		}
+		pub fn has_metadata_with_timestamp(&self, timestamp: u64) -> bool {
+			let mut it = self.metadata.iter();
+			match (it.find(|&m| m.get_timestamp() == timestamp)) {
+				Some(x) => true,
+				None => false
+			}
 		}
 	}
 
