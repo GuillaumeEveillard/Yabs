@@ -6,6 +6,10 @@ use std::io::BufWriter;
 use filetime::FileTime;
 use filetime;
 
+use flate2::Compression;
+use flate2::write::GzEncoder;
+use flate2::read::GzDecoder;
+
 use std::io;
 use std::io::Result;
 use std::io::Read;
@@ -20,7 +24,9 @@ pub fn store_file(store_path: &Path, source_file: &Path) -> String {
 	let mut file_reader = BufReader::new(File::open(&source_file).unwrap());
 	let mut file_writer = BufWriter::new(File::create(&tmp_path).unwrap());
 
-	let mut hash_file_write = HashWriter::new(file_writer);
+	let mut gz_file_writer = GzEncoder::new(file_writer, Compression::Default);
+
+	let mut hash_file_write = HashWriter::new(gz_file_writer);
 
 	io::copy(&mut file_reader, &mut hash_file_write);
 
@@ -39,7 +45,13 @@ pub fn extract_file(store_path: &Path, hash: &String, data_path: &Path, filename
 
 	println!("Extract from {} to {} ", file_in_store.to_str().unwrap(), file_in_wd.to_str().unwrap());
 
-	fs::copy(&file_in_store, &tmp_path);
+	let mut file_reader = BufReader::new(File::open(&file_in_store).unwrap());
+	let mut gz_file_reader = GzDecoder::new(file_reader).unwrap();
+
+	let mut file_writer = BufWriter::new(File::create(&tmp_path).unwrap());
+
+	io::copy(&mut gz_file_reader, &mut file_writer);
+
 	fs::rename(&tmp_path, &file_in_wd);	
 
 	let seconds_since_1970 = FileTime::from_seconds_since_1970(timestamp, 0);

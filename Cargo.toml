@@ -8,3 +8,4 @@ authors = ["GGYE <ggye@free.Fr>"]
 filetime="0.1.9"
 rustc-serialize = "0.3"
 rust-crypto = "0.2.34"
+flate2 = "0.2"

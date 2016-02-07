@@ -1,6 +1,7 @@
 extern crate filetime;
 extern crate rustc_serialize;
 extern crate crypto;
+extern crate flate2;
 
 use std::path::Path;
 use std::collections::HashMap;
