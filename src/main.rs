@@ -4,6 +4,7 @@ extern crate crypto;
 
 use std::path::Path;
 use std::collections::HashMap;
+use std::fs::*;
 
 
 mod metadata;
@@ -26,6 +27,7 @@ fn dispatch_option(option: &str) {
 		"update" => update(),
 		"update-remote" => update_remote(),
 		"commit" => commit(),
+		"commit-remote" => commit_remote(),
 		_ => println!("Unknown option {}", option)
 	}
 }
@@ -88,6 +90,9 @@ fn update_remote() {
 			for (filename, metadata) in x.iter() {
 				store::extract_file(&store_path, &metadata.get_hash(), &data_path, filename, metadata.get_timestamp());
 			}
+			println!("Replace local metadata by remote metadata");
+			remove_file(&json_path);
+			copy(&json_remote_path, &json_path);
 		},
 		None => println!("IMPOSSIBLE to update")
 	}
@@ -171,6 +176,16 @@ fn files_to_update_remote(wd_hierarchy: HashMap<String, model::MetaData>, mt_loc
 	Option::Some(file_to_update)
 }
 
+fn commit_remote() {
+	commit();
+
+	let config = load_config();
+	let json_path = config.get_local_metadata_path();
+	let json_remote_path = config.get_remote_metadata_path();
+
+	remove_file(&json_remote_path);
+	copy(&json_path, &json_remote_path);
+}
 
 fn commit() {
 	let config = load_config();
