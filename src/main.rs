@@ -2,7 +2,9 @@ extern crate filetime;
 extern crate rustc_serialize;
 extern crate crypto;
 extern crate flate2;
+extern crate ssh2;
 
+use std::path::PathBuf;
 use std::path::Path;
 use std::collections::HashMap;
 use std::fs::*;
@@ -12,6 +14,7 @@ mod metadata;
 mod workingdirectory;
 mod store;
 mod config;
+mod sshengine;
 
 fn main() {
 	let mut args = std::env::args();
@@ -29,6 +32,8 @@ fn dispatch_option(option: &str) {
 		"update-remote" => update_remote(),
 		"commit" => commit(),
 		"commit-remote" => commit_remote(),
+		"copy-to-remote" => copy_to_remote(),
+		"copy-from-remote" => download_from_remote(),
 		_ => println!("Unknown option {}", option)
 	}
 }
@@ -242,6 +247,22 @@ fn files_to_commit(wd_hierarchy: HashMap<String, model::MetaData>, mt_hierarchy:
 	}
 
 	files_to_commit
+}
+
+fn copy_to_remote() {
+	let config = load_config();
+	let store_path = config.get_store_path();
+
+	let files = store::get_all_filenames(&store_path);
+
+	sshengine::upload_to_remote(&config.get_ssh_address(), &config.get_ssh_user(), &config.get_ssh_password(), &config.get_ssh_root_path(), &files);
+}
+
+fn download_from_remote() {
+	let config = load_config();
+	let store_path = config.get_store_path();
+
+	sshengine::download_from_remote(&config.get_ssh_address(), &config.get_ssh_user(), &config.get_ssh_password(), &config.get_ssh_root_path(), &store_path);
 }
 
 mod model {

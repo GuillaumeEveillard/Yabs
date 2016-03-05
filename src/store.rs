@@ -3,6 +3,7 @@ use std::fs;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
+use std::path::PathBuf;
 use filetime::FileTime;
 use filetime;
 
@@ -56,6 +57,20 @@ pub fn extract_file(store_path: &Path, hash: &String, data_path: &Path, filename
 
 	let seconds_since_1970 = FileTime::from_seconds_since_1970(timestamp, 0);
 	filetime::set_file_times(&file_in_wd, seconds_since_1970, seconds_since_1970);
+}
+
+pub fn get_all_filenames(store_path: &Path) -> Vec<PathBuf> {
+	let mut paths : Vec<PathBuf> = Vec::new();
+
+	let dir_entries = fs::read_dir(store_path).unwrap();
+
+	for entry in dir_entries {
+		//let mut filename = entry.unwrap().file_name().into_string().unwrap();
+		let mut path = entry.unwrap().path();
+		paths.push(path);
+    }
+
+    paths    
 }
 
 struct HashWriter<W: Write> {

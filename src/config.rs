@@ -10,7 +10,11 @@ pub struct Config {
 	remote_metadata_path: String,
 	data_path: String,
 	store_path: String,
-	storage_mode: StorageMode
+	storage_mode: StorageMode,
+	ssh_address: String,
+	ssh_user: String,
+	ssh_password: String,
+	ssh_root_path: String
 }
 
 #[derive(Debug, RustcEncodable, RustcDecodable, Clone)]
@@ -27,7 +31,11 @@ impl Config {
 			remote_metadata_path: String::from("remote-metadata.json"),
 			data_path: String::from("data"),
 			store_path: String::from("store"),
-			storage_mode: StorageMode::COPY
+			storage_mode: StorageMode::COPY,
+			ssh_address: String::from("127.0.0.1:22"),
+			ssh_user: String::from("root"),
+			ssh_password: String::from("password"),
+			ssh_root_path: String::from("/root/Yabs"),
 		}
 	}
 	pub fn get_local_metadata_path(&self) -> PathBuf {
@@ -44,6 +52,18 @@ impl Config {
 	}
 	pub fn get_storage_mode(&self) -> StorageMode {
 		self.storage_mode.clone()
+	}
+	pub fn get_ssh_address(&self) ->  String {
+		self.ssh_address.clone()
+	}
+	pub fn get_ssh_user(&self) ->  String {
+		self.ssh_user.clone()
+	}
+	pub fn get_ssh_password(&self) ->  String {
+		self.ssh_password.clone()
+	}
+	pub fn get_ssh_root_path(&self) -> PathBuf {
+		PathBuf::from(&self.ssh_root_path)
 	}
 }
 
