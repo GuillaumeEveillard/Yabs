@@ -80,6 +80,11 @@ fn update_remote() {
 	let json_remote_path = config.get_remote_metadata_path();
 	let store_path = config.get_store_path();
 
+    let remote_filename = json_path.file_name().unwrap().to_str().unwrap(); //on the remote, it uses the local path...
+	let on_server_path = config.get_ssh_root_path().join(&a);
+
+	sshengine::download_file_from_remote(&config.get_ssh_address(), &config.get_ssh_user(), &config.get_ssh_password(), &on_server_path, &json_remote_path);
+
 	let wd_hierarchy : HashMap<String, model::MetaData> = workingdirectory::read_working_directory(&data_path);
 	println!("{} files in the working directory", wd_hierarchy.len());
 
@@ -189,8 +194,17 @@ fn commit_remote() {
 	let json_path = config.get_local_metadata_path();
 	let json_remote_path = config.get_remote_metadata_path();
 
-	remove_file(&json_remote_path);
-	copy(&json_path, &json_remote_path);
+    //upload_to_remote(adress: &str, user: &str, password: &str, remote_root_path: &Path, files_path: &Vec<PathBuf>)
+
+    	
+
+	let files = vec![json_path];
+
+	sshengine::upload_to_remote(&config.get_ssh_address(), &config.get_ssh_user(), &config.get_ssh_password(), &config.get_ssh_root_path(), &files);
+
+
+	//remove_file(&json_remote_path);
+	//copy(&json_path, &json_remote_path);
 }
 
 fn commit() {
@@ -262,7 +276,7 @@ fn download_from_remote() {
 	let config = load_config();
 	let store_path = config.get_store_path();
 
-	sshengine::download_from_remote(&config.get_ssh_address(), &config.get_ssh_user(), &config.get_ssh_password(), &config.get_ssh_root_path(), &store_path);
+	sshengine::download_folder_from_remote(&config.get_ssh_address(), &config.get_ssh_user(), &config.get_ssh_password(), &config.get_ssh_root_path(), &store_path);
 }
 
 mod model {

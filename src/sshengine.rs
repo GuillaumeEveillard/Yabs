@@ -35,7 +35,31 @@ pub fn upload_to_remote(adress: &str, user: &str, password: &str, remote_root_pa
 	}
 }
 
-pub fn download_from_remote(adress: &str, user: &str, password: &str, remote_root_path: &Path, local_root_path: &Path) {
+pub fn download_file_from_remote(adress: &str, user: &str, password: &str, remote_path: &Path, local_path: &Path) {
+	//remote duplicate code
+	let tcp = TcpStream::connect(adress).unwrap();
+	let mut sess = Session::new().unwrap();
+	sess.handshake(&tcp).unwrap();
+	sess.userauth_password(user, password).unwrap();
+
+	let sftp = sess.sftp().expect("Cannot create sftp");
+
+
+	let (mut remote_file, stat) = sess.scp_recv(&remote_path).expect("Cannot open remote file");
+
+	let mut remote_file_reader = BufReader::new(remote_file);
+
+
+	println!("local path is {:?}", local_path);
+
+	let mut local_file = File::create(&local_path).expect("Cannot open local file");
+	let mut local_file_writer = BufWriter::new(local_file);
+
+	io::copy(&mut remote_file_reader, &mut local_file_writer);
+}
+
+
+pub fn download_folder_from_remote(adress: &str, user: &str, password: &str, remote_root_path: &Path, local_root_path: &Path) {
 	//remote duplicate code
 	let tcp = TcpStream::connect(adress).unwrap();
 	let mut sess = Session::new().unwrap();
@@ -55,7 +79,6 @@ pub fn download_from_remote(adress: &str, user: &str, password: &str, remote_roo
 
 		let (mut remote_file, stat) = sess.scp_recv(&path).expect("Cannot open remote file");
 
-	//	let remote_file = sftp.open(&path).expect("Cannot open remote file");
 		let mut remote_file_reader = BufReader::new(remote_file);
 
 		let mut local_path = local_root_path.join(filename);
