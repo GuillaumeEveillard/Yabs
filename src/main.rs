@@ -54,6 +54,14 @@ fn new_repo() {
 	metadata::create_emty_metadata_file(&json_path);
 }
 
+/// Update the working directory using the local metadata and the local store
+/// Step 1: construct the list of files to extract from the store
+///   - if the file does not exist in the working directory, it will be extract from store
+///   - if the file exists in the working directory
+///     - if the timestamps are identical, let's do nothing
+///     - the timestamp of the working directory is known in the metadata but it's not the last, so let's update the working directory
+///     - the working directory timestamp is unknown, we do nothing
+/// Step 2: extract files from store
 fn update() {
 	let config = load_config();
 	let data_path = config.get_data_path();
@@ -66,9 +74,9 @@ fn update() {
 	let mt_hierarchy = metadata::read_metadata_file(&json_path);
 	println!("{} files in the metadata", mt_hierarchy.get_number_of_files());
 
-	let file_top_update = files_to_update(wd_hierarchy, &mt_hierarchy);
+	let file_to_update = files_to_update(wd_hierarchy, &mt_hierarchy);
 
-	for (filename, metadata) in file_top_update.iter() {
+	for (filename, metadata) in file_to_update.iter() {
 		store::extract_file(&store_path, &metadata.get_hash(), &data_path, filename, metadata.get_timestamp());
 	}
 }
@@ -207,6 +215,10 @@ fn commit_remote() {
 	//copy(&json_path, &json_remote_path);
 }
 
+/// Commit the working directory in the local metadata and in the local store
+/// - If the file does not exist in the metadata, add it
+/// - If the working directory timestamp is greater than the medtadata timestamp, add the new revision in the metadata and in the store
+/// - If the working directory timestamp is lower than the metadata timestamp, do nothing (this should no happen if "update" is run before commit)
 fn commit() {
 	let config = load_config();
 	let data_path = config.get_data_path();
